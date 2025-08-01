@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ExpenseTracker",
-    "slug": "ExpenseTracker",
+    "slug": "expense-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -38,6 +38,19 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "039046b8-d4eb-4e43-87db-365d649cd2fc"
+      }
+    },
+    "owner": "shadow-dragon",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/039046b8-d4eb-4e43-87db-365d649cd2fc"
     }
   }
 }
