@@ -2,17 +2,19 @@ import { Category, Transaction } from '@/hooks/useDatabase';
 import { useDatabaseService } from '@/hooks/useDatabaseService';
 import { COLORS, TRANSACTION_TYPES } from '@/utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface AddTransactionModalProps {
@@ -31,7 +33,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [type, setType] = useState(TRANSACTION_TYPES.EXPENSE);
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +46,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         setType(editingTransaction.type);
         setCategoryId(editingTransaction.category_id?.toString() || '');
         setDescription(editingTransaction.description || '');
-        setDate(editingTransaction.date);
+        setDate(new Date(editingTransaction.date));
       } else {
         resetForm();
       }
@@ -52,7 +55,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
   const loadCategories = async () => {
     if (!databaseService) return;
-    
+
     try {
       const data = await databaseService.getCategories();
       setCategories(data);
@@ -66,7 +69,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setType(TRANSACTION_TYPES.EXPENSE);
     setCategoryId('');
     setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(new Date());
+    setShowDatePicker(false);
   };
 
   const handleSave = async () => {
@@ -82,7 +86,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         type: type as 'income' | 'expense',
         category_id: parseInt(categoryId),
         description,
-        date,
+        date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
       };
 
       if (editingTransaction) {
@@ -100,6 +104,24 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const filteredCategories = categories.filter(cat => cat.type === type);
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDate(currentDate);
+  };
+
+  const showDatepicker = () => {
+    setShowDatePicker(true);
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
@@ -203,12 +225,23 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           {/* Date */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Date</Text>
-            <TextInput
-              style={styles.input}
-              value={date}
-              onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
-            />
+            <TouchableOpacity style={styles.dateButton} onPress={showDatepicker}>
+              <View style={styles.dateButtonContent}>
+                <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.dateButtonText}>{formatDate(date)}</Text>
+              </View>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onDateChange}
+                maximumDate={new Date()}
+                style={styles.datePicker}
+              />
+            )}
           </View>
         </ScrollView>
       </View>
@@ -298,6 +331,27 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 50,
+    color: COLORS.text,
+    paddingHorizontal: 12,
+  },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: COLORS.surface,
+  },
+  dateButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: COLORS.text,
+    marginLeft: 10,
+  },
+  datePicker: {
+    marginTop: 10,
   },
 });
 
